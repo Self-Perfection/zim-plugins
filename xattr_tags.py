@@ -6,7 +6,8 @@ import logging
 
 logger = logging.getLogger('zim.plugins.xattr_tags')
 
-from zim.plugins import PluginClass, ObjectExtension, extends
+from zim.plugins import PluginClass
+from zim.notebook import NotebookExtension
 from zim.signals import SIGNAL_AFTER
 
 try:
@@ -36,16 +37,15 @@ This makes tags visible in KDE file manager.
 		return bool(xattr), [('python-xattr', not xattr is None, True)]
 
 
-@extends('Notebook')
-class NotebookExtension(ObjectExtension):
+class XattrTagsNotebookExtension(NotebookExtension):
 
 	def __init__(self, plugin, notebook):
 		self.connectto_all(notebook, ('stored-page',), order=SIGNAL_AFTER)
 
-	def on_stored_page(self, notebook, path):
-		tags = list(notebook.tags.list_tags(path))
+	def on_stored_page(self, notebook, page):
+		tags = list(notebook.tags.list_tags(page))
 		if tags:
 			tags = map(lambda x: x.name, tags)
 			tags = ','.join(tags).encode('utf-8')
-			logger.debug('Writing tags %s to %s', tags, path.source_file)
-			xattr.setxattr(str(path.source_file),'user.xdg.tags',tags)
+			logger.debug('Writing tags %s to %s', tags, page.source_file)
+			xattr.setxattr(str(page.source_file),'user.xdg.tags',tags)
